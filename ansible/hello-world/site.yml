@@ -1,0 +1,19 @@
+---
+- name: Task center ansible hello world
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    smoke_message: "{{ smoke_message | default('ansible example from github') }}"
+  tasks:
+    - name: Print example message
+      debug:
+        msg: "{{ smoke_message }}"
+
+    - name: Run simple command
+      shell: "printf 'ansible-host=%s\n' \"$(hostname)\""
+      changed_when: false
+
+    - name: Print completion line
+      debug:
+        msg: "ansible example completed"
