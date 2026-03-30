@@ -4,11 +4,11 @@
   connection: local
   gather_facts: false
   vars:
-    smoke_message: "{{ smoke_message | default('ansible example from github') }}"
+    default_smoke_message: "ansible example from github"
   tasks:
     - name: Print example message
       debug:
-        msg: "{{ smoke_message }}"
+        msg: "{{ smoke_message | default(default_smoke_message) }}"
 
     - name: Run simple command
       shell: "printf 'ansible-host=%s\n' \"$(hostname)\""
