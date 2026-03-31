@@ -1,0 +1,38 @@
+---
+- name: Check Linux service status
+  hosts: all
+  gather_facts: true
+  vars:
+    service_name: "{{ service_name | default('sshd') }}"
+    service_names_csv: "{{ service_names_csv | default('') }}"
+  tasks:
+    - name: Build requested service list
+      set_fact:
+        requested_services: >-
+          {{
+            ([service_name] + (service_names_csv | split(',')))
+            | map('trim')
+            | reject('equalto', '')
+            | unique
+            | list
+          }}
+
+    - name: Gather service facts
+      service_facts:
+
+    - name: Build service status summary
+      set_fact:
+        service_status_summary: "{{ (service_status_summary | default([])) + [summary_item] }}"
+      vars:
+        svc: "{{ ansible_facts.services.get(item + '.service', ansible_facts.services.get(item, {})) }}"
+        summary_item:
+          name: "{{ item }}"
+          state: "{{ svc.state | default('not_found') }}"
+          status: "{{ svc.status | default('unknown') }}"
+          source: "{{ 'service_facts' if svc else 'missing' }}"
+      loop: "{{ requested_services }}"
+
+    - name: Print service status summary
+      debug:
+        var: service_status_summary
+

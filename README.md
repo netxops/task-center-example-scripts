@@ -1,8 +1,26 @@
 # Task Center Example Scripts
 
-This repository contains small, safe examples for OneOps task-center.
+This repository now contains two layers of examples for OneOps task-center:
 
-Structure:
+- practical starters
+  - directly usable as task templates
+  - focused on shell / ansible / terraform / tofu / terragrunt mainline scenarios
+- smoke examples
+  - kept for runner regression and local validation
+
+## Practical starters
+
+- `shell/linux-baseline-report`
+- `shell/http-endpoint-check`
+- `ansible/linux-baseline`
+- `ansible/linux-service-status`
+- `terraform/aws-s3-secure-bucket-starter`
+- `terraform/aws-ec2-instance-starter`
+- `tofu/aws-s3-secure-bucket-starter`
+- `tofu/aws-ec2-instance-starter`
+- `terragrunt/live-secure-bucket-starter`
+
+## Smoke examples
 
 - `shell/hello-world`
 - `shell/with-args`
@@ -14,43 +32,45 @@ Structure:
 - `terragrunt/basic-stack`
 - `terragrunt/variable-stack`
 
-Suggested mappings in the OneOps task creation UI:
+## Suggested mappings in OneOps
 
 - `shell`
-  - `playbook_path`: leave empty
-  - `arguments`: `bash shell/hello-world/run.sh`
-  - script-path mode
-    - `playbook_path`: `shell/hello-world/run.sh`
-    - `arguments`: leave empty
-  - args example
-    - `playbook_path`: `shell/with-args/run.sh`
-    - `arguments`: `demo-target`
-    - optional env: `TASK_MESSAGE=hello from oneops`, `TASK_MODE=smoke`
+  - baseline report
+    - `playbook_path`: `shell/linux-baseline-report/run.sh`
+  - endpoint check
+    - `playbook_path`: `shell/http-endpoint-check/run.sh`
+    - `arguments`: `https://example.com/healthz`
 - `ansible`
-  - `playbook_path`: `ansible/hello-world/site.yml`
-  - `inventory_content`: copy `ansible/hello-world/inventory.ini`
+  - baseline
+    - `playbook_path`: `ansible/linux-baseline/site.yml`
+    - `inventory_content`: copy `ansible/linux-baseline/inventory.ini`
+  - service status
+    - `playbook_path`: `ansible/linux-service-status/site.yml`
+    - `inventory_content`: copy `ansible/linux-service-status/inventory.ini`
+    - `extra_vars_json`: `{"service_name":"sshd"}`
 - `terraform`
-  - `playbook_path`: `terraform/basic-output`
-  - `arguments`: `["-input=false"]`
-  - variable example
-    - `playbook_path`: `terraform/variable-output`
-    - `arguments`: `["-input=false","-var=environment=smoke","-var=service_name=demo-service","-var=operator=oneops-ui"]`
+  - secure bucket
+    - `playbook_path`: `terraform/aws-s3-secure-bucket-starter`
+    - `arguments`: `["-input=false","-var=aws_region=us-east-1","-var=bucket_name=change-me-oneops-secure-bucket"]`
+  - ec2 instance
+    - `playbook_path`: `terraform/aws-ec2-instance-starter`
+    - `arguments`: `["-input=false","-var=aws_region=us-east-1","-var=name=oneops-demo-ec2"]`
 - `tofu`
-  - `playbook_path`: `tofu/basic-output`
-  - `arguments`: `["-input=false"]`
-  - variable example
-    - `playbook_path`: `tofu/variable-output`
-    - `arguments`: `["-input=false","-var=environment=smoke","-var=service_name=demo-service","-var=operator=oneops-ui"]`
+  - secure bucket
+    - `playbook_path`: `tofu/aws-s3-secure-bucket-starter`
+    - `arguments`: `["-input=false","-var=aws_region=us-east-1","-var=bucket_name=change-me-oneops-tofu-bucket"]`
+  - ec2 instance
+    - `playbook_path`: `tofu/aws-ec2-instance-starter`
+    - `arguments`: `["-input=false","-var=aws_region=us-east-1","-var=name=oneops-demo-ec2"]`
 - `terragrunt`
-  - `playbook_path`: `terragrunt/basic-stack`
-  - `arguments`: `["-input=false"]`
-  - variable example
-    - `playbook_path`: `terragrunt/variable-stack`
-    - `arguments`: `["-input=false"]`
+  - live secure bucket
+    - `playbook_path`: `terragrunt/live-secure-bucket-starter/non-prod/us-east-1/ops-secure-bucket`
+    - `arguments`: `["plan","-input=false","-var=bucket_name=change-me-non-prod-us-east-1-ops-bucket"]`
 
-Notes:
+## Notes
 
-- All examples only produce local outputs and do not create real infrastructure.
+- Some practical starters create real AWS resources. Review variables before apply.
 - For private repository execution, configure `repo_url`, `repo_branch`, and `credential_code` in OneOps.
 - For Agent execution, switch the run target to Agent and provide a valid `agent_code`.
-- For local verification, run `bash run-local-smoke.sh`.
+- For local smoke validation, run `bash run-local-smoke.sh`.
+- For OneOps task template batch import, see `templates/README.md`.

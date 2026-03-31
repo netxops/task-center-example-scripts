@@ -1,0 +1,52 @@
+---
+- name: Collect Linux baseline information
+  hosts: all
+  gather_facts: true
+  vars:
+    baseline_top_n: "{{ baseline_top_n | default(5) }}"
+  tasks:
+    - name: Collect uptime
+      command: uptime -p
+      register: uptime_cmd
+      changed_when: false
+      failed_when: false
+
+    - name: Collect filesystem usage
+      command: df -hPT -x tmpfs -x devtmpfs
+      register: disk_cmd
+      changed_when: false
+      failed_when: false
+
+    - name: Collect top CPU processes
+      shell: "ps -eo pid,user,%cpu,%mem,comm --sort=-%cpu | head -n {{ baseline_top_n | int + 1 }}"
+      args:
+        executable: /bin/bash
+      register: top_cpu_cmd
+      changed_when: false
+      failed_when: false
+
+    - name: Collect top memory processes
+      shell: "ps -eo pid,user,%cpu,%mem,comm --sort=-%mem | head -n {{ baseline_top_n | int + 1 }}"
+      args:
+        executable: /bin/bash
+      register: top_mem_cmd
+      changed_when: false
+      failed_when: false
+
+    - name: Print baseline summary
+      debug:
+        msg:
+          hostname: "{{ ansible_hostname }}"
+          fqdn: "{{ ansible_fqdn }}"
+          os: "{{ ansible_distribution }} {{ ansible_distribution_version }}"
+          kernel: "{{ ansible_kernel }}"
+          arch: "{{ ansible_architecture }}"
+          cpu_vcpus: "{{ ansible_processor_vcpus | default(ansible_processor_nproc | default('unknown')) }}"
+          memory_mb: "{{ ansible_memtotal_mb | default('unknown') }}"
+          ipv4: "{{ ansible_all_ipv4_addresses | default([]) }}"
+          default_ipv4: "{{ ansible_default_ipv4.address | default('unknown') }}"
+          uptime: "{{ uptime_cmd.stdout | default('unknown') }}"
+          disks: "{{ disk_cmd.stdout_lines | default([]) }}"
+          top_cpu: "{{ top_cpu_cmd.stdout_lines | default([]) }}"
+          top_mem: "{{ top_mem_cmd.stdout_lines | default([]) }}"
+

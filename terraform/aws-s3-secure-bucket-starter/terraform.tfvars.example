@@ -1,0 +1,7 @@
+aws_region        = "us-east-1"
+bucket_name       = "change-me-oneops-secure-bucket"
+environment       = "non-prod"
+force_destroy     = false
+enable_versioning = true
+enable_kms        = false
+

@@ -1,0 +1,127 @@
+{
+  "version": "2026-03-31",
+  "source_repository": {
+    "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+    "repo_branch": "main"
+  },
+  "templates": [
+    {
+      "name": "task-center-shell-linux-baseline-report",
+      "description": "Linux 主机基线巡检模板。适合在 Agent 纳管后快速摸底主机资源、进程与端口情况。",
+      "app_type": "shell",
+      "playbook_path": "shell/linux-baseline-report/run.sh",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main",
+      "recommended_arguments": "",
+      "notes": [
+        "适合 Controller 本机与 Agent 两种执行位置。",
+        "如需查看更多热点进程，可在任务环境变量中补 BASELINE_TOP_N=10。"
+      ]
+    },
+    {
+      "name": "task-center-shell-http-endpoint-check",
+      "description": "HTTP/HTTPS 健康检查模板。适合做发布后巡检、健康探针和外部接口连通性检查。",
+      "app_type": "shell",
+      "playbook_path": "shell/http-endpoint-check/run.sh",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main",
+      "recommended_arguments": "https://example.com/healthz",
+      "notes": [
+        "任务模板当前不保存 arguments，套用后请补待检查的 URL。",
+        "常用环境变量：EXPECTED_STATUS=200,204 BODY_CONTAINS=ok TIMEOUT_SECONDS=5。"
+      ]
+    },
+    {
+      "name": "task-center-ansible-linux-baseline",
+      "description": "Ansible Linux 巡检模板。适合统一采集主机事实、磁盘和热点进程信息。",
+      "app_type": "ansible",
+      "playbook_path": "ansible/linux-baseline/site.yml",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main",
+      "extra_vars_json": "{\n  \"baseline_top_n\": 10\n}",
+      "inventory_content_example": "[local]\nlocalhost ansible_connection=local",
+      "notes": [
+        "默认 extra_vars_json 已改成真实参数示例。",
+        "任务模板当前不保存 inventory_content，套用后请在任务表单中补 inventory。"
+      ]
+    },
+    {
+      "name": "task-center-ansible-linux-service-status",
+      "description": "Ansible 服务状态检查模板。适合检查 sshd、docker、nginx、kubelet 等关键服务。",
+      "app_type": "ansible",
+      "playbook_path": "ansible/linux-service-status/site.yml",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main",
+      "extra_vars_json": "{\n  \"service_name\": \"sshd\"\n}",
+      "notes": [
+        "任务模板当前不保存 inventory_content，套用后请在任务表单中补 inventory。",
+        "可通过 extra_vars_json 传 service_name 或 service_names_csv。"
+      ]
+    },
+    {
+      "name": "task-center-terraform-aws-s3-secure-bucket",
+      "description": "Terraform AWS S3 安全桶模板。适合创建带版本控制、加密和公网阻断的对象存储桶。",
+      "app_type": "terraform",
+      "playbook_path": "terraform/aws-s3-secure-bucket-starter",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main",
+      "recommended_arguments": "[\"-input=false\",\"-var=aws_region=us-east-1\",\"-var=bucket_name=change-me-oneops-secure-bucket\"]",
+      "notes": [
+        "这是会创建真实 AWS 资源的模板，不再是 smoke 样例。",
+        "如需 KMS，可追加 -var=enable_kms=true 与 -var=kms_key_id=...。"
+      ]
+    },
+    {
+      "name": "task-center-terraform-aws-ec2-instance",
+      "description": "Terraform AWS EC2 单机模板。适合作为云主机交付、临时跳板机或运维作业节点的起步模板。",
+      "app_type": "terraform",
+      "playbook_path": "terraform/aws-ec2-instance-starter",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main",
+      "recommended_arguments": "[\"-input=false\",\"-var=aws_region=us-east-1\",\"-var=name=oneops-demo-ec2\"]",
+      "notes": [
+        "如 AWS 账号没有默认子网，建议额外补 subnet_id 和 security_group_ids。",
+        "默认会启用 IMDSv2 和加密根盘。"
+      ]
+    },
+    {
+      "name": "task-center-tofu-aws-s3-secure-bucket",
+      "description": "OpenTofu AWS S3 安全桶模板。适合在 Tofu 执行链路中落标准对象存储能力。",
+      "app_type": "tofu",
+      "playbook_path": "tofu/aws-s3-secure-bucket-starter",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main",
+      "recommended_arguments": "[\"-input=false\",\"-var=aws_region=us-east-1\",\"-var=bucket_name=change-me-oneops-tofu-bucket\"]",
+      "notes": [
+        "这是会创建真实 AWS 资源的模板，不再是 smoke 样例。",
+        "适合作为 Terraform 向 OpenTofu 迁移后的第一批实战模板。"
+      ]
+    },
+    {
+      "name": "task-center-tofu-aws-ec2-instance",
+      "description": "OpenTofu AWS EC2 单机模板。适合作为 Tofu 链路里的云主机交付 starter。",
+      "app_type": "tofu",
+      "playbook_path": "tofu/aws-ec2-instance-starter",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main",
+      "recommended_arguments": "[\"-input=false\",\"-var=aws_region=us-east-1\",\"-var=name=oneops-demo-ec2\"]",
+      "notes": [
+        "如 AWS 账号没有默认子网，建议额外补 subnet_id 和 security_group_ids。",
+        "默认会启用 IMDSv2 和加密根盘。"
+      ]
+    },
+    {
+      "name": "task-center-terragrunt-live-secure-bucket",
+      "description": "Terragrunt live 目录起步模板。适合按环境和区域组织对象存储等基础资源。",
+      "app_type": "terragrunt",
+      "playbook_path": "terragrunt/live-secure-bucket-starter/non-prod/us-east-1/ops-secure-bucket",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main",
+      "recommended_arguments": "[\"plan\",\"-input=false\",\"-var=bucket_name=change-me-non-prod-us-east-1-ops-bucket\"]",
+      "notes": [
+        "保留了 root.hcl + account.hcl + region.hcl + unit 的主线结构。",
+        "适合作为后续扩展多环境、多区域 live stacks 的起点。"
+      ]
+    }
+  ]
+}
