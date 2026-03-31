@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 API_BASE="${API_BASE:-http://127.0.0.1:8080/api/v1}"
 AUTH_TOKEN="${AUTH_TOKEN:-abc123}"
-CATALOG_PATH="${CATALOG_PATH:-${SCRIPT_DIR}/task-template-catalog.json}"
+CATALOG_PATH="${CATALOG_PATH:-${SCRIPT_DIR}/variable-set-catalog.json}"
 DRY_RUN="${DRY_RUN:-false}"
 
 require_cmd() {
@@ -49,15 +49,13 @@ if [[ ! -f "${CATALOG_PATH}" ]]; then
   exit 2
 fi
 
-log "loading template catalog: ${CATALOG_PATH}"
+log "loading variable set catalog: ${CATALOG_PATH}"
 
-LIST_RESP="$(api_get "${API_BASE}/platform/task-templates")"
-VARIABLE_SET_RESP="$(api_get "${API_BASE}/platform/variable-sets")"
+LIST_RESP="$(api_get "${API_BASE}/platform/variable-sets")"
 
 CATALOG_LINES="$(
 CATALOG_PATH="${CATALOG_PATH}" \
 LIST_RESP="${LIST_RESP}" \
-VARIABLE_SET_RESP="${VARIABLE_SET_RESP}" \
 python3 - <<'PY'
 import json
 import os
@@ -70,12 +68,6 @@ with open(catalog_path, "r", encoding="utf-8") as fh:
 try:
     list_resp = json.loads(os.environ["LIST_RESP"])
 except Exception as exc:
-    print(f"ERROR\tfailed to parse task template list response: {exc}")
-    sys.exit(0)
-
-try:
-    variable_set_resp = json.loads(os.environ["VARIABLE_SET_RESP"])
-except Exception as exc:
     print(f"ERROR\tfailed to parse variable set list response: {exc}")
     sys.exit(0)
 
@@ -83,72 +75,38 @@ items = list_resp.get("data", [])
 existing = {}
 for item in items if isinstance(items, list) else []:
     name = str(item.get("name", "")).strip()
-    tid = str(item.get("id", "")).strip()
-    if name and tid:
-        existing[name] = tid
-
-variable_set_items = variable_set_resp.get("data", [])
-variable_sets = {}
-for item in variable_set_items if isinstance(variable_set_items, list) else []:
-    name = str(item.get("name", "")).strip()
     item_id = str(item.get("id", "")).strip()
     if name and item_id:
-        variable_sets[name] = item_id
+        existing[name] = item_id
 
-for template in catalog.get("templates", []):
+for variable_set in catalog.get("variable_sets", []):
     payload = {}
-    for key in (
-        "name",
-        "description",
-        "app_type",
-        "variable_set_id",
-        "playbook_path",
-        "inventory_content",
-        "inventory_grouping_selection_set_id",
-        "repo_url",
-        "repo_branch",
-        "extra_vars_json",
-        "arguments",
-        "run_on_agent",
-        "agent_code",
-        "credential_code",
-    ):
-        value = template.get(key)
+    for key in ("name", "description", "vars_json"):
+        value = variable_set.get(key)
         if isinstance(value, str):
             if value.strip() != "":
                 payload[key] = value
-        elif isinstance(value, bool):
-            payload[key] = value
         elif value is not None:
             payload[key] = value
-
-    variable_set_name = str(template.get("variable_set_name", "")).strip()
-    if variable_set_name and not payload.get("variable_set_id"):
-        variable_set_id = variable_sets.get(variable_set_name, "")
-        if not variable_set_id:
-            print(f"ERROR\tvariable set not found for template {template.get('name', '')}: {variable_set_name}")
-            continue
-        payload["variable_set_id"] = variable_set_id
-
     if not payload.get("name"):
-        print("ERROR\ttemplate name is required")
+        print("ERROR\tvariable set name is required")
         continue
-    template_id = existing.get(payload["name"], "")
-    action = "update" if template_id else "create"
-    print(action + "\t" + template_id + "\t" + json.dumps(payload, ensure_ascii=False))
+    item_id = existing.get(payload["name"], "")
+    action = "update" if item_id else "create"
+    print(action + "\t" + item_id + "\t" + json.dumps(payload, ensure_ascii=False))
 PY
 )"
 
 if [[ -z "${CATALOG_LINES}" ]]; then
-  log "no templates found in catalog"
+  log "no variable sets found in catalog"
   exit 0
 fi
 
-while IFS=$'\t' read -r action template_id payload; do
+while IFS=$'\t' read -r action item_id payload; do
   [[ -n "${action}" ]] || continue
 
   if [[ "${action}" == "ERROR" ]]; then
-    echo "${template_id}" >&2
+    echo "${item_id}" >&2
     exit 1
   fi
 
@@ -167,11 +125,11 @@ PY
   fi
 
   if [[ "${action}" == "create" ]]; then
-    log "creating template: ${name}"
-    resp="$(api_post "${API_BASE}/platform/task-templates" "${payload}")"
+    log "creating variable set: ${name}"
+    resp="$(api_post "${API_BASE}/platform/variable-sets" "${payload}")"
   else
-    log "updating template: ${name} (${template_id})"
-    resp="$(api_put "${API_BASE}/platform/task-templates/${template_id}" "${payload}")"
+    log "updating variable set: ${name} (${item_id})"
+    resp="$(api_put "${API_BASE}/platform/variable-sets/${item_id}" "${payload}")"
   fi
 
   ok="$(
@@ -189,11 +147,11 @@ PY
 
   if [[ "${ok}" != "true" ]]; then
     echo "${resp}" >&2
-    echo "failed to ${action} template: ${name}" >&2
+    echo "failed to ${action} variable set: ${name}" >&2
     exit 1
   fi
 
   log "done: ${name}"
 done <<< "${CATALOG_LINES}"
 
-log "task template import completed"
+log "variable set import completed"

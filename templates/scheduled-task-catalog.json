@@ -1,0 +1,50 @@
+{
+  "version": "2026-03-31",
+  "defaults": {
+    "function_area": "DefaultArea",
+    "enabled": false
+  },
+  "scheduled_tasks": [
+    {
+      "name": "task-center-schedule-system-quick-snapshot-hourly",
+      "description": "每小时抓取一次系统快速快照，适合作为高频健康采样。",
+      "template_name": "task-center-shell-system-quick-snapshot",
+      "cron_expr": "0 * * * *",
+      "enabled": false
+    },
+    {
+      "name": "task-center-schedule-system-deep-inspection-daily",
+      "description": "每天凌晨做一次深度巡检，适合保留系统基线与异常线索。",
+      "template_name": "task-center-shell-system-deep-inspection",
+      "variable_set_name": "task-center-shell-inspection-defaults",
+      "cron_expr": "0 3 * * *",
+      "enabled": false
+    },
+    {
+      "name": "task-center-schedule-http-endpoint-check-5min",
+      "description": "每 5 分钟检查一次关键 HTTP/HTTPS 健康接口。",
+      "template_name": "task-center-shell-http-endpoint-check",
+      "variable_set_name": "task-center-shell-http-check-defaults",
+      "cron_expr": "*/5 * * * *",
+      "arguments": "https://example.com/healthz",
+      "enabled": false
+    },
+    {
+      "name": "task-center-schedule-config-backup-nightly",
+      "description": "每天凌晨备份一次关键配置文件。",
+      "template_name": "task-center-shell-file-backup-rotate",
+      "variable_set_name": "task-center-shell-backup-defaults",
+      "cron_expr": "30 2 * * *",
+      "arguments": "/etc/hosts /etc/resolv.conf",
+      "enabled": false
+    },
+    {
+      "name": "task-center-schedule-periodic-pcap-disabled",
+      "description": "周期性抓包任务模板，默认禁用，按需开启。",
+      "template_name": "task-center-shell-periodic-pcap",
+      "variable_set_name": "task-center-shell-pcap-defaults",
+      "cron_expr": "0 */6 * * *",
+      "enabled": false
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "version": "2026-03-31",
+  "variable_sets": [
+    {
+      "name": "task-center-shell-inspection-defaults",
+      "description": "Shell 深度巡检默认变量组，适合 system-deep-inspection 模板与定时任务。",
+      "vars_json": "{\n  \"INSPECT_TOP_N\": \"10\",\n  \"INSPECT_JOURNAL_LINES\": \"120\",\n  \"SHOW_JOURNAL_ERRORS\": \"true\",\n  \"SHOW_NETWORK_DETAILS\": \"true\"\n}"
+    },
+    {
+      "name": "task-center-shell-linux-baseline-defaults",
+      "description": "Shell Linux 基线巡检默认变量组。",
+      "vars_json": "{\n  \"BASELINE_TOP_N\": \"10\"\n}"
+    },
+    {
+      "name": "task-center-shell-transfer-defaults",
+      "description": "Shell 批量文件上下发默认变量组。",
+      "vars_json": "{\n  \"TRANSFER_DIRECTION\": \"push\",\n  \"TRANSFER_SSH_PORT\": \"22\",\n  \"TRANSFER_PARALLEL_JOBS\": \"2\"\n}"
+    },
+    {
+      "name": "task-center-shell-backup-defaults",
+      "description": "Shell 文件备份默认变量组。",
+      "vars_json": "{\n  \"BACKUP_ROOT\": \"/tmp/oneops-file-backups\",\n  \"BACKUP_PREFIX\": \"oneops-backup\",\n  \"BACKUP_RETENTION_COUNT\": \"14\"\n}"
+    },
+    {
+      "name": "task-center-shell-http-check-defaults",
+      "description": "Shell HTTP 探测默认变量组。",
+      "vars_json": "{\n  \"EXPECTED_STATUS\": \"200,204\",\n  \"TIMEOUT_SECONDS\": \"5\",\n  \"RETRY_COUNT\": \"1\",\n  \"METHOD\": \"GET\",\n  \"SHOW_BODY\": \"false\"\n}"
+    },
+    {
+      "name": "task-center-shell-pcap-defaults",
+      "description": "Shell 周期性抓包默认变量组。",
+      "vars_json": "{\n  \"PCAP_INTERFACE\": \"any\",\n  \"PCAP_OUTPUT_DIR\": \"/tmp/oneops-pcaps\",\n  \"PCAP_FILE_PREFIX\": \"capture\",\n  \"PCAP_ROTATE_SECONDS\": \"300\",\n  \"PCAP_ROTATE_COUNT\": \"12\"\n}"
+    },
+    {
+      "name": "task-center-ansible-linux-deep-inspection-defaults",
+      "description": "Ansible 深度巡检默认变量组。",
+      "vars_json": "{\n  \"inspect_top_n\": 10,\n  \"inspect_journal_lines\": 120\n}"
+    },
+    {
+      "name": "task-center-ansible-linux-baseline-defaults",
+      "description": "Ansible Linux 基线巡检默认变量组。",
+      "vars_json": "{\n  \"baseline_top_n\": 10\n}"
+    },
+    {
+      "name": "task-center-ansible-batch-transfer-defaults",
+      "description": "Ansible 批量文件上下发默认变量组。",
+      "vars_json": "{\n  \"transfer_direction\": \"push\",\n  \"transfer_items_csv\": \"README.md\",\n  \"transfer_dest_dir\": \"/tmp/oneops-transfer\"\n}"
+    },
+    {
+      "name": "task-center-ansible-file-backup-defaults",
+      "description": "Ansible 文件备份默认变量组。",
+      "vars_json": "{\n  \"backup_paths_csv\": \"/etc/hosts,/etc/resolv.conf\",\n  \"backup_retention_count\": 7,\n  \"backup_fetch_to_local\": false\n}"
+    },
+    {
+      "name": "task-center-ansible-cron-job-defaults",
+      "description": "Ansible cron 管理默认变量组。",
+      "vars_json": "{\n  \"cron_action\": \"ensure\",\n  \"cron_name\": \"ops-healthcheck\",\n  \"cron_user\": \"root\",\n  \"cron_job\": \"/usr/local/bin/healthcheck.sh >> /var/log/healthcheck.log 2>&1\",\n  \"cron_minute\": \"*/10\"\n}"
+    },
+    {
+      "name": "task-center-ansible-service-status-defaults",
+      "description": "Ansible 服务状态巡检默认变量组。",
+      "vars_json": "{\n  \"service_name\": \"sshd\"\n}"
+    }
+  ]
+}

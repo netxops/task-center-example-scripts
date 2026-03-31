@@ -5,6 +5,10 @@ This repository now contains two layers of examples for OneOps task-center:
 - practical starters
   - directly usable as task templates
   - focused on shell / ansible / terraform / tofu / terragrunt mainline scenarios
+- importable OneOps assets
+  - variable sets
+  - task templates
+  - scheduled tasks
 - smoke examples
   - kept for runner regression and local validation
 
@@ -115,3 +119,19 @@ This repository now contains two layers of examples for OneOps task-center:
 - For Agent execution, switch the run target to Agent and provide a valid `agent_code`.
 - For local smoke validation, run `bash run-local-smoke.sh`.
 - For OneOps task template batch import, see `templates/README.md`.
+
+## Import Into OneOps
+
+```bash
+cd task-center-example-scripts
+bash templates/import-variable-sets.sh
+bash templates/import-to-oneops.sh
+DEFAULT_PROJECT_ID=ops-demo bash templates/import-scheduled-tasks.sh
+```
+
+如果希望一次性导入：
+
+```bash
+cd task-center-example-scripts
+DEFAULT_PROJECT_ID=ops-demo bash templates/bootstrap-oneops-assets.sh
+```
