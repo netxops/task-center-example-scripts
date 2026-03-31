@@ -1,0 +1,72 @@
+---
+- name: Backup files and rotate archives
+  hosts: all
+  gather_facts: false
+  vars:
+    backup_paths_csv_resolved: "{{ backup_paths_csv | default('/etc/hosts') }}"
+    backup_root_resolved: "{{ backup_root | default('/tmp/oneops-file-backups') }}"
+    backup_retention_count_resolved: "{{ backup_retention_count | default(7) }}"
+    backup_fetch_to_local_resolved: "{{ backup_fetch_to_local | default(false) }}"
+    backup_local_staging_resolved: "{{ backup_local_staging | default(playbook_dir ~ '/artifacts') }}"
+    backup_timestamp: "{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
+    backup_archive_path: "{{ backup_root_resolved }}/{{ inventory_hostname }}-{{ backup_timestamp }}.tar.gz"
+  tasks:
+    - name: Build backup path list
+      set_fact:
+        backup_paths: >-
+          {{
+            backup_paths_csv_resolved
+            | split(',')
+            | map('trim')
+            | reject('equalto', '')
+            | list
+          }}
+
+    - name: Ensure backup root exists
+      file:
+        path: "{{ backup_root_resolved }}"
+        state: directory
+        mode: "0755"
+
+    - name: Create backup archive
+      archive:
+        path: "{{ backup_paths }}"
+        dest: "{{ backup_archive_path }}"
+        format: gz
+
+    - name: Find old backup archives
+      find:
+        paths: "{{ backup_root_resolved }}"
+        patterns: "{{ inventory_hostname }}-*.tar.gz"
+        file_type: file
+      register: backup_archives
+
+    - name: Remove old backup archives beyond retention count
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ (backup_archives.files | sort(attribute='mtime', reverse=true))[backup_retention_count_resolved | int:] }}"
+
+    - name: Ensure local staging exists when fetching backup
+      file:
+        path: "{{ backup_local_staging_resolved }}"
+        state: directory
+        mode: "0755"
+      delegate_to: localhost
+      run_once: true
+      when: backup_fetch_to_local_resolved | bool
+
+    - name: Fetch backup archive to local staging
+      fetch:
+        src: "{{ backup_archive_path }}"
+        dest: "{{ backup_local_staging_resolved }}/"
+        flat: false
+      when: backup_fetch_to_local_resolved | bool
+
+    - name: Print backup summary
+      debug:
+        msg:
+          host: "{{ inventory_hostname }}"
+          archive: "{{ backup_archive_path }}"
+          backup_paths: "{{ backup_paths }}"
+          retention: "{{ backup_retention_count_resolved }}"

@@ -1,0 +1,86 @@
+---
+- name: Batch file transfer
+  hosts: all
+  gather_facts: false
+  vars:
+    transfer_direction_resolved: "{{ transfer_direction | default('push') }}"
+    transfer_items_csv_resolved: "{{ transfer_items_csv | default('') }}"
+    transfer_dest_dir_resolved: "{{ transfer_dest_dir | default('/tmp/oneops-transfer') }}"
+    transfer_src_root_resolved: "{{ transfer_src_root | default(playbook_dir ~ '/../..') }}"
+    transfer_local_staging_resolved: "{{ transfer_local_staging | default(playbook_dir ~ '/artifacts') }}"
+    transfer_archive_name: "pull-{{ inventory_hostname }}.tar.gz"
+  tasks:
+    - name: Validate transfer direction
+      assert:
+        that:
+          - transfer_direction_resolved in ['push', 'pull']
+        fail_msg: transfer_direction must be push or pull
+
+    - name: Build transfer item list
+      set_fact:
+        transfer_items: >-
+          {{
+            transfer_items_csv_resolved
+            | split(',')
+            | map('trim')
+            | reject('equalto', '')
+            | list
+          }}
+
+    - name: Validate transfer item list
+      assert:
+        that:
+          - transfer_items | length > 0
+        fail_msg: transfer_items_csv is required, for example "shell/system-quick-snapshot/run.sh,README.md"
+
+    - name: Ensure destination directory exists for push mode
+      file:
+        path: "{{ transfer_dest_dir_resolved }}"
+        state: directory
+        mode: "0755"
+      when: transfer_direction_resolved == 'push'
+
+    - name: Push files or directories to remote hosts
+      copy:
+        src: "{{ transfer_src_root_resolved }}/{{ item }}"
+        dest: "{{ transfer_dest_dir_resolved }}/"
+        mode: preserve
+      loop: "{{ transfer_items }}"
+      when: transfer_direction_resolved == 'push'
+
+    - name: Ensure local staging directory exists for pull mode
+      file:
+        path: "{{ transfer_local_staging_resolved }}"
+        state: directory
+        mode: "0755"
+      delegate_to: localhost
+      run_once: true
+      when: transfer_direction_resolved == 'pull'
+
+    - name: Archive remote paths for pull mode
+      archive:
+        path: "{{ transfer_items }}"
+        dest: "/tmp/{{ transfer_archive_name }}"
+        format: gz
+      when: transfer_direction_resolved == 'pull'
+
+    - name: Fetch archive from remote hosts
+      fetch:
+        src: "/tmp/{{ transfer_archive_name }}"
+        dest: "{{ transfer_local_staging_resolved }}/"
+        flat: false
+      when: transfer_direction_resolved == 'pull'
+
+    - name: Remove remote temporary archive
+      file:
+        path: "/tmp/{{ transfer_archive_name }}"
+        state: absent
+      when: transfer_direction_resolved == 'pull'
+
+    - name: Print transfer summary
+      debug:
+        msg:
+          host: "{{ inventory_hostname }}"
+          direction: "{{ transfer_direction_resolved }}"
+          items: "{{ transfer_items }}"
+          dest_dir: "{{ transfer_dest_dir_resolved if transfer_direction_resolved == 'push' else transfer_local_staging_resolved }}"

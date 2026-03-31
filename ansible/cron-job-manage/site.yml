@@ -1,0 +1,62 @@
+---
+- name: Manage cron jobs
+  hosts: all
+  gather_facts: false
+  vars:
+    cron_action_resolved: "{{ cron_action | default('ensure') }}"
+    cron_name_resolved: "{{ cron_name | default('oneops-managed-job') }}"
+    cron_user_resolved: "{{ cron_user | default('root') }}"
+    cron_job_resolved: "{{ cron_job | default('/usr/bin/date >> /tmp/oneops-cron.log 2>&1') }}"
+    cron_minute_resolved: "{{ cron_minute | default('*/5') }}"
+    cron_hour_resolved: "{{ cron_hour | default('*') }}"
+    cron_day_resolved: "{{ cron_day | default('*') }}"
+    cron_month_resolved: "{{ cron_month | default('*') }}"
+    cron_weekday_resolved: "{{ cron_weekday | default('*') }}"
+    cron_disabled_resolved: "{{ cron_disabled | default(false) }}"
+  tasks:
+    - name: Validate cron action
+      assert:
+        that:
+          - cron_action_resolved in ['ensure', 'absent', 'list']
+        fail_msg: cron_action must be ensure, absent, or list
+
+    - name: List current crontab for target user
+      command: "crontab -l -u {{ cron_user_resolved }}"
+      register: cron_list_cmd
+      changed_when: false
+      failed_when: false
+      when: cron_action_resolved == 'list'
+
+    - name: Print current crontab
+      debug:
+        var: cron_list_cmd.stdout_lines
+      when: cron_action_resolved == 'list'
+
+    - name: Ensure or remove cron job
+      cron:
+        name: "{{ cron_name_resolved }}"
+        user: "{{ cron_user_resolved }}"
+        minute: "{{ cron_minute_resolved }}"
+        hour: "{{ cron_hour_resolved }}"
+        day: "{{ cron_day_resolved }}"
+        month: "{{ cron_month_resolved }}"
+        weekday: "{{ cron_weekday_resolved }}"
+        job: "{{ cron_job_resolved }}"
+        disabled: "{{ cron_disabled_resolved | bool }}"
+        state: "{{ 'present' if cron_action_resolved == 'ensure' else 'absent' }}"
+      when: cron_action_resolved in ['ensure', 'absent']
+
+    - name: Print cron summary
+      debug:
+        msg:
+          host: "{{ inventory_hostname }}"
+          action: "{{ cron_action_resolved }}"
+          user: "{{ cron_user_resolved }}"
+          name: "{{ cron_name_resolved }}"
+          minute: "{{ cron_minute_resolved }}"
+          hour: "{{ cron_hour_resolved }}"
+          day: "{{ cron_day_resolved }}"
+          month: "{{ cron_month_resolved }}"
+          weekday: "{{ cron_weekday_resolved }}"
+          disabled: "{{ cron_disabled_resolved }}"
+      when: cron_action_resolved in ['ensure', 'absent']

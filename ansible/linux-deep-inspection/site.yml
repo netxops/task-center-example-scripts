@@ -1,0 +1,80 @@
+---
+- name: Collect deep Linux inspection report
+  hosts: all
+  gather_facts: true
+  vars:
+    inspect_top_n_resolved: "{{ inspect_top_n | default(8) }}"
+    inspect_journal_lines_resolved: "{{ inspect_journal_lines | default(80) }}"
+  tasks:
+    - name: Collect uptime
+      command: uptime -p
+      register: uptime_cmd
+      changed_when: false
+      failed_when: false
+
+    - name: Collect filesystem usage
+      command: df -hPT -x tmpfs -x devtmpfs
+      register: disk_cmd
+      changed_when: false
+      failed_when: false
+
+    - name: Collect inode usage
+      command: df -hi -x tmpfs -x devtmpfs
+      register: inode_cmd
+      changed_when: false
+      failed_when: false
+
+    - name: Collect failed systemd units
+      command: systemctl --failed --no-pager --plain
+      register: failed_units_cmd
+      changed_when: false
+      failed_when: false
+
+    - name: Collect listening ports
+      shell: ss -lntup | head -n 50
+      args:
+        executable: /bin/bash
+      register: listening_ports_cmd
+      changed_when: false
+      failed_when: false
+
+    - name: Collect top CPU processes
+      shell: "ps -eo pid,user,%cpu,%mem,etime,comm --sort=-%cpu | head -n {{ inspect_top_n_resolved | int + 1 }}"
+      args:
+        executable: /bin/bash
+      register: top_cpu_cmd
+      changed_when: false
+      failed_when: false
+
+    - name: Collect top memory processes
+      shell: "ps -eo pid,user,%cpu,%mem,etime,comm --sort=-%mem | head -n {{ inspect_top_n_resolved | int + 1 }}"
+      args:
+        executable: /bin/bash
+      register: top_mem_cmd
+      changed_when: false
+      failed_when: false
+
+    - name: Collect journal errors
+      command: journalctl -p err -n {{ inspect_journal_lines_resolved }} --no-pager
+      register: journal_err_cmd
+      changed_when: false
+      failed_when: false
+
+    - name: Print deep inspection summary
+      debug:
+        msg:
+          hostname: "{{ ansible_hostname }}"
+          fqdn: "{{ ansible_fqdn }}"
+          os: "{{ ansible_distribution }} {{ ansible_distribution_version }}"
+          kernel: "{{ ansible_kernel }}"
+          cpu_vcpus: "{{ ansible_processor_vcpus | default(ansible_processor_nproc | default('unknown')) }}"
+          memory_mb: "{{ ansible_memtotal_mb | default('unknown') }}"
+          ipv4: "{{ ansible_all_ipv4_addresses | default([]) }}"
+          uptime: "{{ uptime_cmd.stdout | default('unknown') }}"
+          filesystems: "{{ disk_cmd.stdout_lines | default([]) }}"
+          inodes: "{{ inode_cmd.stdout_lines | default([]) }}"
+          failed_units: "{{ failed_units_cmd.stdout_lines | default([]) }}"
+          listening_ports: "{{ listening_ports_cmd.stdout_lines | default([]) }}"
+          top_cpu: "{{ top_cpu_cmd.stdout_lines | default([]) }}"
+          top_mem: "{{ top_mem_cmd.stdout_lines | default([]) }}"
+          journal_errors: "{{ journal_err_cmd.stdout_lines | default([]) }}"

@@ -38,8 +38,18 @@
 
 ## 默认推荐导入
 
+- `task-center-shell-system-deep-inspection`
+- `task-center-shell-system-quick-snapshot`
+- `task-center-shell-batch-file-transfer`
+- `task-center-shell-file-backup-rotate`
+- `task-center-shell-cron-job-manage`
+- `task-center-shell-periodic-pcap`
 - `task-center-shell-linux-baseline-report`
 - `task-center-shell-http-endpoint-check`
+- `task-center-ansible-linux-deep-inspection`
+- `task-center-ansible-batch-file-transfer`
+- `task-center-ansible-file-backup-rotate`
+- `task-center-ansible-cron-job-manage`
 - `task-center-ansible-linux-baseline`
 - `task-center-ansible-linux-service-status`
 - `task-center-terraform-aws-s3-secure-bucket`

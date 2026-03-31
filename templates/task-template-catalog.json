@@ -6,6 +6,84 @@
   },
   "templates": [
     {
+      "name": "task-center-shell-system-deep-inspection",
+      "description": "系统深度巡检模板。适合对 Linux 主机做更全面的巡检、摸底和故障前后对比。",
+      "app_type": "shell",
+      "playbook_path": "shell/system-deep-inspection/run.sh",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main",
+      "recommended_arguments": "",
+      "notes": [
+        "常用环境变量：INSPECT_TOP_N=10, INSPECT_JOURNAL_LINES=120。",
+        "适合作为变量组 + 定时任务组合的日常巡检主模板。"
+      ]
+    },
+    {
+      "name": "task-center-shell-system-quick-snapshot",
+      "description": "系统快速信息抓取模板。适合在排障开始阶段快速确认主机当前状态。",
+      "app_type": "shell",
+      "playbook_path": "shell/system-quick-snapshot/run.sh",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main",
+      "recommended_arguments": "",
+      "notes": [
+        "输出比深度巡检更短，适合高频触发。",
+        "适合作为前置诊断模板。"
+      ]
+    },
+    {
+      "name": "task-center-shell-batch-file-transfer",
+      "description": "批量文件上下发模板。适合一对多推送文件，或从多台主机回收日志与配置。",
+      "app_type": "shell",
+      "playbook_path": "shell/batch-file-transfer/run.sh",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main",
+      "recommended_arguments": "./package.tar.gz /tmp/releases",
+      "notes": [
+        "需补充环境变量：TRANSFER_TARGETS 或 TRANSFER_TARGETS_FILE。",
+        "默认优先使用 rsync，没有时退回 scp。"
+      ]
+    },
+    {
+      "name": "task-center-shell-file-backup-rotate",
+      "description": "本机文件备份与轮转模板。适合备份关键目录、配置文件和应用产物。",
+      "app_type": "shell",
+      "playbook_path": "shell/file-backup-rotate/run.sh",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main",
+      "recommended_arguments": "/etc /opt/app/config.yaml",
+      "notes": [
+        "常用环境变量：BACKUP_ROOT=/data/backups, BACKUP_RETENTION_COUNT=14。",
+        "适合作为定时任务的主线模板。"
+      ]
+    },
+    {
+      "name": "task-center-shell-cron-job-manage",
+      "description": "Shell cron 管理模板。适合快速开通、更新或下线系统定时任务。",
+      "app_type": "shell",
+      "playbook_path": "shell/cron-job-manage/run.sh",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main",
+      "recommended_arguments": "",
+      "notes": [
+        "常用环境变量：CRON_ACTION, CRON_NAME, CRON_SCHEDULE, CRON_COMMAND。",
+        "支持管理当前用户 crontab，也支持管理 /etc/cron.d。"
+      ]
+    },
+    {
+      "name": "task-center-shell-periodic-pcap",
+      "description": "周期性抓包模板。适合按接口、过滤条件和轮转周期持续抓包。",
+      "app_type": "shell",
+      "playbook_path": "shell/periodic-pcap/run.sh",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main",
+      "recommended_arguments": "",
+      "notes": [
+        "常用环境变量：PCAP_INTERFACE, PCAP_OUTPUT_DIR, PCAP_ROTATE_SECONDS, PCAP_FILTER。",
+        "依赖 tcpdump，通常需要 root 或抓包能力。"
+      ]
+    },
+    {
       "name": "task-center-shell-linux-baseline-report",
       "description": "Linux 主机基线巡检模板。适合在 Agent 纳管后快速摸底主机资源、进程与端口情况。",
       "app_type": "shell",
@@ -29,6 +107,62 @@
       "notes": [
         "任务模板当前不保存 arguments，套用后请补待检查的 URL。",
         "常用环境变量：EXPECTED_STATUS=200,204 BODY_CONTAINS=ok TIMEOUT_SECONDS=5。"
+      ]
+    },
+    {
+      "name": "task-center-ansible-linux-deep-inspection",
+      "description": "Ansible 深度巡检模板。适合对一批 Linux 主机统一采集失败服务、端口、热点进程和错误日志。",
+      "app_type": "ansible",
+      "playbook_path": "ansible/linux-deep-inspection/site.yml",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main",
+      "extra_vars_json": "{\n  \"inspect_top_n\": 10,\n  \"inspect_journal_lines\": 120\n}",
+      "inventory_content_example": "[local]\nlocalhost ansible_connection=local",
+      "notes": [
+        "任务模板当前不保存 inventory_content，套用后请在任务表单中补 inventory。",
+        "适合做批量服务器的日常巡检模板。"
+      ]
+    },
+    {
+      "name": "task-center-ansible-batch-file-transfer",
+      "description": "Ansible 批量文件上下发模板。适合把文件推到多台主机，或把多台主机上的文件打包回收。",
+      "app_type": "ansible",
+      "playbook_path": "ansible/batch-file-transfer/site.yml",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main",
+      "extra_vars_json": "{\n  \"transfer_direction\": \"push\",\n  \"transfer_items_csv\": \"README.md\",\n  \"transfer_dest_dir\": \"/tmp/oneops-transfer\"\n}",
+      "inventory_content_example": "[local]\nlocalhost ansible_connection=local",
+      "notes": [
+        "任务模板当前不保存 inventory_content，套用后请在任务表单中补 inventory。",
+        "pull 模式会先在远端打包，再回收到当前执行节点。"
+      ]
+    },
+    {
+      "name": "task-center-ansible-file-backup-rotate",
+      "description": "Ansible 批量文件备份模板。适合对多台主机上的关键目录和配置文件做归档备份。",
+      "app_type": "ansible",
+      "playbook_path": "ansible/file-backup-rotate/site.yml",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main",
+      "extra_vars_json": "{\n  \"backup_paths_csv\": \"/etc/hosts,/etc/resolv.conf\",\n  \"backup_retention_count\": 7\n}",
+      "inventory_content_example": "[local]\nlocalhost ansible_connection=local",
+      "notes": [
+        "任务模板当前不保存 inventory_content，套用后请在任务表单中补 inventory。",
+        "如需把备份包回收到执行节点，可额外传 backup_fetch_to_local=true。"
+      ]
+    },
+    {
+      "name": "task-center-ansible-cron-job-manage",
+      "description": "Ansible cron 管理模板。适合在多台 Linux 主机上统一创建、更新或删除计划任务。",
+      "app_type": "ansible",
+      "playbook_path": "ansible/cron-job-manage/site.yml",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main",
+      "extra_vars_json": "{\n  \"cron_action\": \"ensure\",\n  \"cron_name\": \"ops-healthcheck\",\n  \"cron_job\": \"/usr/local/bin/healthcheck.sh >> /var/log/healthcheck.log 2>&1\",\n  \"cron_minute\": \"*/10\"\n}",
+      "inventory_content_example": "[local]\nlocalhost ansible_connection=local",
+      "notes": [
+        "任务模板当前不保存 inventory_content，套用后请在任务表单中补 inventory。",
+        "支持 ensure、absent、list 三种动作。"
       ]
     },
     {
