@@ -126,16 +126,24 @@ for template in catalog.get("templates", []):
     if variable_set_name and not payload.get("variable_set_id"):
         variable_set_id = variable_sets.get(variable_set_name, "")
         if not variable_set_id:
-            print(f"ERROR\tvariable set not found for template {template.get('name', '')}: {variable_set_name}")
+            print(json.dumps({
+                "action": "ERROR",
+                "message": f"variable set not found for template {template.get('name', '')}: {variable_set_name}",
+            }, ensure_ascii=False))
             continue
         payload["variable_set_id"] = variable_set_id
 
     if not payload.get("name"):
-        print("ERROR\ttemplate name is required")
+        print(json.dumps({"action": "ERROR", "message": "template name is required"}, ensure_ascii=False))
         continue
     template_id = existing.get(payload["name"], "")
     action = "update" if template_id else "create"
-    print(action + "\t" + template_id + "\t" + json.dumps(payload, ensure_ascii=False))
+    print(json.dumps({
+        "action": action,
+        "item_id": template_id,
+        "name": payload["name"],
+        "payload": payload,
+    }, ensure_ascii=False))
 PY
 )"
 
@@ -144,20 +152,47 @@ if [[ -z "${CATALOG_LINES}" ]]; then
   exit 0
 fi
 
-while IFS=$'\t' read -r action template_id payload; do
-  [[ -n "${action}" ]] || continue
+while IFS= read -r row; do
+  [[ -n "${row}" ]] || continue
+
+  action="$(
+  ROW="${row}" python3 - <<'PY'
+import json
+import os
+print(json.loads(os.environ["ROW"]).get("action", ""))
+PY
+  )"
 
   if [[ "${action}" == "ERROR" ]]; then
-    echo "${template_id}" >&2
+    ROW="${row}" python3 - <<'PY' >&2
+import json
+import os
+print(json.loads(os.environ["ROW"]).get("message", "unknown error"))
+PY
     exit 1
   fi
 
-  name="$(
-  PAYLOAD="${payload}" python3 - <<'PY'
+  template_id="$(
+  ROW="${row}" python3 - <<'PY'
 import json
 import os
-data = json.loads(os.environ["PAYLOAD"])
-print(data.get("name", ""))
+print(json.loads(os.environ["ROW"]).get("item_id", ""))
+PY
+  )"
+
+  name="$(
+  ROW="${row}" python3 - <<'PY'
+import json
+import os
+print(json.loads(os.environ["ROW"]).get("name", ""))
+PY
+  )"
+
+  payload="$(
+  ROW="${row}" python3 - <<'PY'
+import json
+import os
+print(json.dumps(json.loads(os.environ["ROW"]).get("payload", {}), ensure_ascii=False))
 PY
   )"
 

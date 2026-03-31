@@ -172,7 +172,10 @@ for scheduled_task in catalog.get("scheduled_tasks", []):
     if template_name and not payload.get("template_id"):
         template_id = template_ids.get(template_name, "")
         if not template_id:
-            print(f"ERROR\ttemplate not found for scheduled task {scheduled_task.get('name', '')}: {template_name}")
+            print(json.dumps({
+                "action": "ERROR",
+                "message": f"template not found for scheduled task {scheduled_task.get('name', '')}: {template_name}",
+            }, ensure_ascii=False))
             continue
         payload["template_id"] = template_id
 
@@ -180,7 +183,10 @@ for scheduled_task in catalog.get("scheduled_tasks", []):
     if variable_set_name and not payload.get("variable_set_id"):
         variable_set_id = variable_set_ids.get(variable_set_name, "")
         if not variable_set_id:
-            print(f"ERROR\tvariable set not found for scheduled task {scheduled_task.get('name', '')}: {variable_set_name}")
+            print(json.dumps({
+                "action": "ERROR",
+                "message": f"variable set not found for scheduled task {scheduled_task.get('name', '')}: {variable_set_name}",
+            }, ensure_ascii=False))
             continue
         payload["variable_set_id"] = variable_set_id
 
@@ -199,12 +205,20 @@ for scheduled_task in catalog.get("scheduled_tasks", []):
 
     missing = [key for key in ("name", "template_id", "project_id", "function_area", "cron_expr") if not str(payload.get(key, "")).strip()]
     if missing:
-        print(f"ERROR\tscheduled task missing required fields {missing}: {scheduled_task.get('name', '')}")
+        print(json.dumps({
+            "action": "ERROR",
+            "message": f"scheduled task missing required fields {missing}: {scheduled_task.get('name', '')}",
+        }, ensure_ascii=False))
         continue
 
     item_id = existing.get(payload["name"], "")
     action = "update" if item_id else "create"
-    print(action + "\t" + item_id + "\t" + json.dumps(payload, ensure_ascii=False))
+    print(json.dumps({
+        "action": action,
+        "item_id": item_id,
+        "name": payload["name"],
+        "payload": payload,
+    }, ensure_ascii=False))
 PY
 )"
 
@@ -213,20 +227,47 @@ if [[ -z "${CATALOG_LINES}" ]]; then
   exit 0
 fi
 
-while IFS=$'\t' read -r action item_id payload; do
-  [[ -n "${action}" ]] || continue
+while IFS= read -r row; do
+  [[ -n "${row}" ]] || continue
+
+  action="$(
+  ROW="${row}" python3 - <<'PY'
+import json
+import os
+print(json.loads(os.environ["ROW"]).get("action", ""))
+PY
+  )"
 
   if [[ "${action}" == "ERROR" ]]; then
-    echo "${item_id}" >&2
+    ROW="${row}" python3 - <<'PY' >&2
+import json
+import os
+print(json.loads(os.environ["ROW"]).get("message", "unknown error"))
+PY
     exit 1
   fi
 
-  name="$(
-  PAYLOAD="${payload}" python3 - <<'PY'
+  item_id="$(
+  ROW="${row}" python3 - <<'PY'
 import json
 import os
-data = json.loads(os.environ["PAYLOAD"])
-print(data.get("name", ""))
+print(json.loads(os.environ["ROW"]).get("item_id", ""))
+PY
+  )"
+
+  name="$(
+  ROW="${row}" python3 - <<'PY'
+import json
+import os
+print(json.loads(os.environ["ROW"]).get("name", ""))
+PY
+  )"
+
+  payload="$(
+  ROW="${row}" python3 - <<'PY'
+import json
+import os
+print(json.dumps(json.loads(os.environ["ROW"]).get("payload", {}), ensure_ascii=False))
 PY
   )"
 

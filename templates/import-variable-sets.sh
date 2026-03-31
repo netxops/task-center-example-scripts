@@ -89,11 +89,16 @@ for variable_set in catalog.get("variable_sets", []):
         elif value is not None:
             payload[key] = value
     if not payload.get("name"):
-        print("ERROR\tvariable set name is required")
+        print(json.dumps({"action": "ERROR", "message": "variable set name is required"}, ensure_ascii=False))
         continue
     item_id = existing.get(payload["name"], "")
     action = "update" if item_id else "create"
-    print(action + "\t" + item_id + "\t" + json.dumps(payload, ensure_ascii=False))
+    print(json.dumps({
+        "action": action,
+        "item_id": item_id,
+        "name": payload["name"],
+        "payload": payload,
+    }, ensure_ascii=False))
 PY
 )"
 
@@ -102,20 +107,47 @@ if [[ -z "${CATALOG_LINES}" ]]; then
   exit 0
 fi
 
-while IFS=$'\t' read -r action item_id payload; do
-  [[ -n "${action}" ]] || continue
+while IFS= read -r row; do
+  [[ -n "${row}" ]] || continue
+
+  action="$(
+  ROW="${row}" python3 - <<'PY'
+import json
+import os
+print(json.loads(os.environ["ROW"]).get("action", ""))
+PY
+  )"
 
   if [[ "${action}" == "ERROR" ]]; then
-    echo "${item_id}" >&2
+    ROW="${row}" python3 - <<'PY' >&2
+import json
+import os
+print(json.loads(os.environ["ROW"]).get("message", "unknown error"))
+PY
     exit 1
   fi
 
-  name="$(
-  PAYLOAD="${payload}" python3 - <<'PY'
+  item_id="$(
+  ROW="${row}" python3 - <<'PY'
 import json
 import os
-data = json.loads(os.environ["PAYLOAD"])
-print(data.get("name", ""))
+print(json.loads(os.environ["ROW"]).get("item_id", ""))
+PY
+  )"
+
+  name="$(
+  ROW="${row}" python3 - <<'PY'
+import json
+import os
+print(json.loads(os.environ["ROW"]).get("name", ""))
+PY
+  )"
+
+  payload="$(
+  ROW="${row}" python3 - <<'PY'
+import json
+import os
+print(json.dumps(json.loads(os.environ["ROW"]).get("payload", {}), ensure_ascii=False))
 PY
   )"
 
