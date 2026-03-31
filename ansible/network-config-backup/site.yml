@@ -119,7 +119,10 @@
           inventory_host: "{{ inventory_hostname }}"
           backup_path: >-
             {{
-              backup_result.backup_path
+              (
+                backup_result.backup_path
+                | default(network_backup_dir_resolved ~ '/' ~ network_backup_filename)
+              )
               if normalized_vendor in ['cisco_ios', 'cisco_nxos', 'huawei_ce']
               else (network_backup_dir_resolved ~ '/' ~ network_backup_filename)
             }}

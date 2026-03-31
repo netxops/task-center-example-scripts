@@ -111,9 +111,17 @@
           commands: "{{ selected_show_commands }}"
           stdout_lines: >-
             {{
-              cli_result.stdout_lines
+              (
+                cli_result.stdout_lines
+                | default(cli_result.stdout | default([]))
+              )
               if normalized_vendor in ['cisco_ios', 'cisco_nxos', 'huawei_ce']
-              else (h3c_cli_result.results | map(attribute='stdout_lines') | list)
+              else (
+                h3c_cli_result.results
+                | default([])
+                | map(attribute='stdout_lines')
+                | list
+              )
             }}
       when: normalized_vendor != 'f5_bigip'
 
