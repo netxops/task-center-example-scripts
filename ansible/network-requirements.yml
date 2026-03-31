@@ -1,0 +1,7 @@
+---
+collections:
+  - name: ansible.netcommon
+  - name: community.network
+  - name: cisco.ios
+  - name: cisco.nxos
+  - name: f5networks.f5_modules

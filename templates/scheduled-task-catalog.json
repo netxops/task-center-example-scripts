@@ -45,6 +45,38 @@
       "variable_set_name": "task-center-shell-pcap-defaults",
       "cron_expr": "0 */6 * * *",
       "enabled": false
+    },
+    {
+      "name": "task-center-schedule-network-config-backup-nightly",
+      "description": "每天凌晨归档一次多厂商网络设备配置快照，默认禁用。",
+      "template_name": "task-center-ansible-network-config-backup",
+      "variable_set_name": "task-center-ansible-network-config-backup-defaults",
+      "cron_expr": "15 2 * * *",
+      "enabled": false
+    },
+    {
+      "name": "task-center-schedule-network-baseline-weekly",
+      "description": "每周做一次多厂商网络基线盘点，默认禁用。",
+      "template_name": "task-center-ansible-network-multi-vendor-baseline",
+      "variable_set_name": "task-center-ansible-network-baseline-defaults",
+      "cron_expr": "0 4 * * 1",
+      "enabled": false
+    },
+    {
+      "name": "task-center-schedule-switch-config-backup-nightly",
+      "description": "每天凌晨做一次交换机配置归档，默认禁用。",
+      "template_name": "task-center-ansible-switch-config-backup",
+      "variable_set_name": "task-center-ansible-switch-config-backup-defaults",
+      "cron_expr": "0 2 * * *",
+      "enabled": false
+    },
+    {
+      "name": "task-center-schedule-f5-config-backup-nightly",
+      "description": "每天凌晨做一次 F5 逻辑对象快照备份，默认禁用。",
+      "template_name": "task-center-ansible-f5-config-backup",
+      "variable_set_name": "task-center-ansible-f5-config-backup-defaults",
+      "cron_expr": "30 2 * * *",
+      "enabled": false
     }
   ]
 }

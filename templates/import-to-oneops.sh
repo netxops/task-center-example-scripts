@@ -7,6 +7,10 @@ API_BASE="${API_BASE:-http://127.0.0.1:8080/api/v1}"
 AUTH_TOKEN="${AUTH_TOKEN:-abc123}"
 CATALOG_PATH="${CATALOG_PATH:-${SCRIPT_DIR}/task-template-catalog.json}"
 DRY_RUN="${DRY_RUN:-false}"
+REPO_URL_OVERRIDE="${REPO_URL_OVERRIDE:-}"
+REPO_BRANCH_OVERRIDE="${REPO_BRANCH_OVERRIDE:-}"
+RUN_ON_AGENT_OVERRIDE="${RUN_ON_AGENT_OVERRIDE:-}"
+AGENT_CODE_OVERRIDE="${AGENT_CODE_OVERRIDE:-}"
 
 require_cmd() {
   command -v "$1" >/dev/null 2>&1 || {
@@ -50,6 +54,18 @@ if [[ ! -f "${CATALOG_PATH}" ]]; then
 fi
 
 log "loading template catalog: ${CATALOG_PATH}"
+if [[ -n "${REPO_URL_OVERRIDE}" ]]; then
+  log "overriding template repo_url with: ${REPO_URL_OVERRIDE}"
+fi
+if [[ -n "${REPO_BRANCH_OVERRIDE}" ]]; then
+  log "overriding template repo_branch with: ${REPO_BRANCH_OVERRIDE}"
+fi
+if [[ -n "${RUN_ON_AGENT_OVERRIDE}" ]]; then
+  log "overriding template run_on_agent with: ${RUN_ON_AGENT_OVERRIDE}"
+fi
+if [[ -n "${AGENT_CODE_OVERRIDE}" ]]; then
+  log "overriding template agent_code with: ${AGENT_CODE_OVERRIDE}"
+fi
 
 LIST_RESP="$(api_get "${API_BASE}/platform/task-templates")"
 VARIABLE_SET_RESP="$(api_get "${API_BASE}/platform/variable-sets")"
@@ -58,6 +74,10 @@ CATALOG_LINES="$(
 CATALOG_PATH="${CATALOG_PATH}" \
 LIST_RESP="${LIST_RESP}" \
 VARIABLE_SET_RESP="${VARIABLE_SET_RESP}" \
+REPO_URL_OVERRIDE="${REPO_URL_OVERRIDE}" \
+REPO_BRANCH_OVERRIDE="${REPO_BRANCH_OVERRIDE}" \
+RUN_ON_AGENT_OVERRIDE="${RUN_ON_AGENT_OVERRIDE}" \
+AGENT_CODE_OVERRIDE="${AGENT_CODE_OVERRIDE}" \
 python3 - <<'PY'
 import json
 import os
@@ -66,6 +86,11 @@ import sys
 catalog_path = os.environ["CATALOG_PATH"]
 with open(catalog_path, "r", encoding="utf-8") as fh:
     catalog = json.load(fh)
+
+repo_url_override = os.environ.get("REPO_URL_OVERRIDE", "").strip()
+repo_branch_override = os.environ.get("REPO_BRANCH_OVERRIDE", "").strip()
+run_on_agent_override = os.environ.get("RUN_ON_AGENT_OVERRIDE", "").strip().lower()
+agent_code_override = os.environ.get("AGENT_CODE_OVERRIDE", "").strip()
 
 try:
     list_resp = json.loads(os.environ["LIST_RESP"])
@@ -132,6 +157,15 @@ for template in catalog.get("templates", []):
             }, ensure_ascii=False))
             continue
         payload["variable_set_id"] = variable_set_id
+
+    if repo_url_override:
+        payload["repo_url"] = repo_url_override
+    if repo_branch_override:
+        payload["repo_branch"] = repo_branch_override
+    if run_on_agent_override in {"true", "false"}:
+        payload["run_on_agent"] = run_on_agent_override == "true"
+    if agent_code_override:
+        payload["agent_code"] = agent_code_override
 
     if not payload.get("name"):
         print(json.dumps({"action": "ERROR", "message": "template name is required"}, ensure_ascii=False))

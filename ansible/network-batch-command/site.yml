@@ -1,0 +1,109 @@
+---
+- name: Run multi-vendor batch commands
+  hosts: all
+  gather_facts: false
+  vars:
+    network_vendor_aliases:
+      ios: cisco_ios
+      cisco_ios: cisco_ios
+      nxos: cisco_nxos
+      cisco_nxos: cisco_nxos
+      huawei: huawei_ce
+      huawei_ce: huawei_ce
+      h3c: h3c_cli
+      h3c_cli: h3c_cli
+      f5: f5_bigip
+      f5_bigip: f5_bigip
+    normalized_vendor: >-
+      {{
+        network_vendor_aliases.get(
+          (network_vendor | default(vendor_family | default(''))) | lower,
+          (network_vendor | default(vendor_family | default(''))) | lower
+        )
+      }}
+    network_commands_resolved: "{{ network_commands | default([]) }}"
+    cisco_ios_default_commands: "{{ cisco_ios_commands | default(['show version', 'show ip interface brief']) }}"
+    cisco_nxos_default_commands: "{{ cisco_nxos_commands | default(['show version', 'show interface brief']) }}"
+    huawei_ce_default_commands: "{{ huawei_ce_commands | default(['display version', 'display ip interface brief']) }}"
+    h3c_cli_default_commands: "{{ h3c_cli_commands | default(['display version', 'display ip interface brief']) }}"
+    f5_tmsh_default_commands: "{{ f5_tmsh_commands | default(['show sys version', 'show net interface']) }}"
+    selected_show_commands: >-
+      {{
+        network_commands_resolved
+        if (network_commands_resolved | length > 0)
+        else lookup('vars', normalized_vendor ~ '_default_commands', default=[])
+      }}
+    f5_provider:
+      server: "{{ ansible_host | default(inventory_hostname) }}"
+      user: "{{ ansible_user }}"
+      password: "{{ ansible_password }}"
+      validate_certs: "{{ f5_validate_certs | default(false) }}"
+  tasks:
+    - name: Ensure the requested vendor family is supported
+      ansible.builtin.assert:
+        that:
+          - normalized_vendor in ['cisco_ios', 'cisco_nxos', 'huawei_ce', 'h3c_cli', 'f5_bigip']
+          - selected_show_commands | length > 0
+        fail_msg: >-
+          Please provide network_commands or vendor specific default commands.
+
+    - name: Run Cisco IOS commands
+      cisco.ios.ios_command:
+        commands: "{{ selected_show_commands }}"
+      register: cli_result
+      changed_when: false
+      when: normalized_vendor == 'cisco_ios'
+
+    - name: Run Cisco NX-OS commands
+      cisco.nxos.nxos_command:
+        commands: "{{ selected_show_commands }}"
+      register: cli_result
+      changed_when: false
+      when: normalized_vendor == 'cisco_nxos'
+
+    - name: Run Huawei commands
+      community.network.ce_command:
+        commands: "{{ selected_show_commands }}"
+      register: cli_result
+      changed_when: false
+      when: normalized_vendor == 'huawei_ce'
+
+    - name: Run H3C commands through generic CLI
+      ansible.netcommon.cli_command:
+        command: "{{ item }}"
+      loop: "{{ selected_show_commands }}"
+      register: h3c_cli_result
+      changed_when: false
+      when: normalized_vendor == 'h3c_cli'
+
+    - name: Run F5 TMSH commands
+      f5networks.f5_modules.bigip_command:
+        commands: "{{ selected_show_commands }}"
+        provider: "{{ f5_provider }}"
+        warn: false
+      delegate_to: localhost
+      register: f5_command_result
+      when: normalized_vendor == 'f5_bigip'
+
+    - name: Print CLI command result
+      ansible.builtin.debug:
+        msg:
+          vendor_family: "{{ normalized_vendor }}"
+          inventory_host: "{{ inventory_hostname }}"
+          commands: "{{ selected_show_commands }}"
+          stdout_lines: >-
+            {{
+              cli_result.stdout_lines
+              if normalized_vendor in ['cisco_ios', 'cisco_nxos', 'huawei_ce']
+              else (h3c_cli_result.results | map(attribute='stdout_lines') | list)
+            }}
+      when: normalized_vendor != 'f5_bigip'
+
+    - name: Print F5 command result
+      ansible.builtin.debug:
+        msg:
+          vendor_family: "{{ normalized_vendor }}"
+          inventory_host: "{{ inventory_hostname }}"
+          commands: "{{ selected_show_commands }}"
+          stdout_lines: "{{ f5_command_result.stdout_lines | default([]) }}"
+      when: normalized_vendor == 'f5_bigip'

@@ -133,6 +133,141 @@
       "repo_branch": "main"
     },
     {
+      "name": "task-center-ansible-network-multi-vendor-baseline",
+      "description": "多厂商网络基线巡检模板。适合 Cisco IOS/NXOS、Huawei CE、H3C、F5 做第一轮版本、接口和对象盘点。",
+      "app_type": "ansible",
+      "variable_set_name": "task-center-ansible-network-baseline-defaults",
+      "playbook_path": "ansible/network-multi-vendor-baseline/site.yml",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main"
+    },
+    {
+      "name": "task-center-ansible-network-interface-neighbor-audit",
+      "description": "多厂商网络接口与邻居巡检模板。适合查看端口状态、三层接口和 LLDP 邻居，F5 则采集接口与 VLAN 相关对象。",
+      "app_type": "ansible",
+      "variable_set_name": "task-center-ansible-network-interface-audit-defaults",
+      "playbook_path": "ansible/network-interface-neighbor-audit/site.yml",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main"
+    },
+    {
+      "name": "task-center-ansible-network-config-backup",
+      "description": "多厂商网络配置备份模板。适合做变更前快照、周期性归档和故障后取证留档。",
+      "app_type": "ansible",
+      "variable_set_name": "task-center-ansible-network-config-backup-defaults",
+      "playbook_path": "ansible/network-config-backup/site.yml",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main"
+    },
+    {
+      "name": "task-center-ansible-network-batch-command",
+      "description": "多厂商网络批量命令模板。适合在 Cisco、Huawei、H3C、F5 上执行一组 show / display / tmsh 命令。",
+      "app_type": "ansible",
+      "variable_set_name": "task-center-ansible-network-batch-command-defaults",
+      "playbook_path": "ansible/network-batch-command/site.yml",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main"
+    },
+    {
+      "name": "task-center-ansible-network-snippet-deploy",
+      "description": "多厂商网络配置片段下发模板。适合做 SNMP、NTP、Syslog、Banner 等小步快跑变更，默认先做变更前备份。",
+      "app_type": "ansible",
+      "variable_set_name": "task-center-ansible-network-snippet-deploy-defaults",
+      "playbook_path": "ansible/network-snippet-deploy/site.yml",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main"
+    },
+    {
+      "name": "task-center-ansible-switch-baseline",
+      "description": "交换机主线基线盘点模板。适合 Cisco IOS/NXOS、Huawei CE、H3C 交换机做第一轮版本、型号、接口和邻居摸底。",
+      "app_type": "ansible",
+      "variable_set_name": "task-center-ansible-switch-baseline-defaults",
+      "playbook_path": "ansible/network-multi-vendor-baseline/site.yml",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main"
+    },
+    {
+      "name": "task-center-ansible-switch-interface-neighbor-audit",
+      "description": "交换机主线接口与邻居巡检模板。适合做端口状态、三层接口和 LLDP 邻居的日常巡检。",
+      "app_type": "ansible",
+      "variable_set_name": "task-center-ansible-switch-interface-audit-defaults",
+      "playbook_path": "ansible/network-interface-neighbor-audit/site.yml",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main"
+    },
+    {
+      "name": "task-center-ansible-switch-config-backup",
+      "description": "交换机主线配置备份模板。适合做 nightly 归档、变更前快照和故障后取证留档。",
+      "app_type": "ansible",
+      "variable_set_name": "task-center-ansible-switch-config-backup-defaults",
+      "playbook_path": "ansible/network-config-backup/site.yml",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main"
+    },
+    {
+      "name": "task-center-ansible-switch-batch-command",
+      "description": "交换机主线批量命令模板。适合批量执行 show / display 命令，快速拉齐巡检口径。",
+      "app_type": "ansible",
+      "variable_set_name": "task-center-ansible-switch-batch-command-defaults",
+      "playbook_path": "ansible/network-batch-command/site.yml",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main"
+    },
+    {
+      "name": "task-center-ansible-switch-snippet-deploy",
+      "description": "交换机主线配置片段下发模板。适合统一下发 SNMP、Syslog、NTP、Banner 等标准片段。",
+      "app_type": "ansible",
+      "variable_set_name": "task-center-ansible-switch-snippet-deploy-defaults",
+      "playbook_path": "ansible/network-snippet-deploy/site.yml",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main"
+    },
+    {
+      "name": "task-center-ansible-f5-device-baseline",
+      "description": "F5 主线设备基线模板。适合看设备、接口、VLAN、同步状态和 LTM 基础对象。",
+      "app_type": "ansible",
+      "variable_set_name": "task-center-ansible-f5-device-baseline-defaults",
+      "playbook_path": "ansible/network-multi-vendor-baseline/site.yml",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main"
+    },
+    {
+      "name": "task-center-ansible-f5-ltm-audit",
+      "description": "F5 主线 LTM 服务巡检模板。适合检查 Interface、VLAN、Self IP、Node、Pool、Virtual Server 和同步状态。",
+      "app_type": "ansible",
+      "variable_set_name": "task-center-ansible-f5-ltm-audit-defaults",
+      "playbook_path": "ansible/network-interface-neighbor-audit/site.yml",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main"
+    },
+    {
+      "name": "task-center-ansible-f5-config-backup",
+      "description": "F5 主线配置快照备份模板。适合按天归档逻辑对象快照并保留变更前证据。",
+      "app_type": "ansible",
+      "variable_set_name": "task-center-ansible-f5-config-backup-defaults",
+      "playbook_path": "ansible/network-config-backup/site.yml",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main"
+    },
+    {
+      "name": "task-center-ansible-f5-batch-command",
+      "description": "F5 主线批量 TMSH 命令模板。适合临时排障、对象盘点和巡检命令执行。",
+      "app_type": "ansible",
+      "variable_set_name": "task-center-ansible-f5-batch-command-defaults",
+      "playbook_path": "ansible/network-batch-command/site.yml",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main"
+    },
+    {
+      "name": "task-center-ansible-f5-snippet-deploy",
+      "description": "F5 主线配置片段变更模板。适合小步快跑执行 TMSH 变更并自动做变更前快照。",
+      "app_type": "ansible",
+      "variable_set_name": "task-center-ansible-f5-snippet-deploy-defaults",
+      "playbook_path": "ansible/network-snippet-deploy/site.yml",
+      "repo_url": "https://github.com/netxops/task-center-example-scripts.git",
+      "repo_branch": "main"
+    },
+    {
       "name": "task-center-terraform-aws-s3-secure-bucket",
       "description": "Terraform AWS S3 安全桶模板。适合创建带版本控制、加密和公网阻断的对象存储桶。",
       "app_type": "terraform",

@@ -1,0 +1,132 @@
+---
+- name: Collect multi-vendor network baseline
+  hosts: all
+  gather_facts: false
+  vars:
+    network_vendor_aliases:
+      ios: cisco_ios
+      cisco_ios: cisco_ios
+      cisco: cisco_ios
+      nxos: cisco_nxos
+      cisco_nxos: cisco_nxos
+      huawei: huawei_ce
+      huawei_ce: huawei_ce
+      ce: huawei_ce
+      h3c: h3c_cli
+      h3c_cli: h3c_cli
+      f5: f5_bigip
+      f5_bigip: f5_bigip
+    normalized_vendor: >-
+      {{
+        network_vendor_aliases.get(
+          (network_vendor | default(vendor_family | default(''))) | lower,
+          (network_vendor | default(vendor_family | default(''))) | lower
+        )
+      }}
+    cisco_ios_baseline_commands:
+      - show version
+      - show inventory
+      - show ip interface brief
+      - show lldp neighbors detail
+    cisco_nxos_baseline_commands:
+      - show version
+      - show inventory
+      - show interface brief
+      - show lldp neighbors detail
+    huawei_ce_baseline_commands:
+      - display version
+      - display device
+      - display ip interface brief
+      - display lldp neighbor verbose
+    h3c_cli_baseline_commands:
+      - display version
+      - display device manuinfo
+      - display ip interface brief
+      - display lldp neighbor-information verbose
+    f5_gather_subset:
+      - system-info
+      - interfaces
+      - vlans
+      - device-groups
+      - sync-status
+      - ltm-pools
+      - virtual-servers
+    f5_provider:
+      server: "{{ ansible_host | default(inventory_hostname) }}"
+      user: "{{ ansible_user }}"
+      password: "{{ ansible_password }}"
+      validate_certs: "{{ f5_validate_certs | default(false) }}"
+    selected_show_commands: "{{ lookup('vars', normalized_vendor ~ '_baseline_commands', default=[]) }}"
+  tasks:
+    - name: Ensure the requested vendor family is supported
+      ansible.builtin.assert:
+        that:
+          - normalized_vendor in ['cisco_ios', 'cisco_nxos', 'huawei_ce', 'h3c_cli', 'f5_bigip']
+        fail_msg: >-
+          Unsupported vendor_family={{ vendor_family | default(network_vendor | default('unset')) }}.
+          Supported values: cisco_ios, cisco_nxos, huawei_ce, h3c_cli, f5_bigip.
+
+    - name: Run Cisco IOS baseline commands
+      cisco.ios.ios_command:
+        commands: "{{ selected_show_commands }}"
+      register: cli_result
+      changed_when: false
+      when: normalized_vendor == 'cisco_ios'
+
+    - name: Run Cisco NX-OS baseline commands
+      cisco.nxos.nxos_command:
+        commands: "{{ selected_show_commands }}"
+      register: cli_result
+      changed_when: false
+      when: normalized_vendor == 'cisco_nxos'
+
+    - name: Run Huawei baseline commands
+      community.network.ce_command:
+        commands: "{{ selected_show_commands }}"
+      register: cli_result
+      changed_when: false
+      when: normalized_vendor == 'huawei_ce'
+
+    - name: Run H3C baseline commands through generic CLI
+      ansible.netcommon.cli_command:
+        command: "{{ item }}"
+      loop: "{{ selected_show_commands }}"
+      register: h3c_cli_result
+      changed_when: false
+      when: normalized_vendor == 'h3c_cli'
+
+    - name: Collect F5 baseline information
+      f5networks.f5_modules.bigip_device_info:
+        gather_subset: "{{ f5_gather_subset }}"
+        provider: "{{ f5_provider }}"
+      delegate_to: localhost
+      register: f5_info
+      when: normalized_vendor == 'f5_bigip'
+
+    - name: Print CLI baseline summary
+      ansible.builtin.debug:
+        msg:
+          vendor_family: "{{ normalized_vendor }}"
+          inventory_host: "{{ inventory_hostname }}"
+          commands: "{{ selected_show_commands }}"
+          stdout_lines: >-
+            {{
+              cli_result.stdout_lines
+              if normalized_vendor in ['cisco_ios', 'cisco_nxos', 'huawei_ce']
+              else (h3c_cli_result.results | map(attribute='stdout_lines') | list)
+            }}
+      when: normalized_vendor != 'f5_bigip'
+
+    - name: Print F5 baseline summary
+      ansible.builtin.debug:
+        msg:
+          vendor_family: "{{ normalized_vendor }}"
+          inventory_host: "{{ inventory_hostname }}"
+          system_info: "{{ f5_info.system_info | default({}) }}"
+          interfaces: "{{ f5_info.interfaces | default([]) }}"
+          vlans: "{{ f5_info.vlans | default([]) }}"
+          device_groups: "{{ f5_info.device_groups | default([]) }}"
+          sync_status: "{{ f5_info.sync_status | default([]) }}"
+          ltm_pools: "{{ f5_info.ltm_pools | default([]) }}"
+          virtual_servers: "{{ f5_info.virtual_servers | default([]) }}"
+      when: normalized_vendor == 'f5_bigip'

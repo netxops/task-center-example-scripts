@@ -1,0 +1,200 @@
+---
+- name: Deploy multi-vendor configuration snippets
+  hosts: all
+  gather_facts: false
+  vars:
+    network_vendor_aliases:
+      ios: cisco_ios
+      cisco_ios: cisco_ios
+      nxos: cisco_nxos
+      cisco_nxos: cisco_nxos
+      huawei: huawei_ce
+      huawei_ce: huawei_ce
+      h3c: h3c_cli
+      h3c_cli: h3c_cli
+      f5: f5_bigip
+      f5_bigip: f5_bigip
+    normalized_vendor: >-
+      {{
+        network_vendor_aliases.get(
+          (network_vendor | default(vendor_family | default(''))) | lower,
+          (network_vendor | default(vendor_family | default(''))) | lower
+        )
+      }}
+    network_backup_dir_resolved: "{{ network_backup_dir | default('./artifacts/network-change-backups') }}"
+    network_backup_before_change_resolved: "{{ network_backup_before_change | default(true) | bool }}"
+    network_save_when_done_resolved: "{{ network_save_when_done | default(true) | bool }}"
+    selected_config_lines: >-
+      {{
+        network_config_lines
+        | default(
+            lookup('vars', normalized_vendor ~ '_config_lines', default=[]),
+            true
+          )
+      }}
+    f5_provider:
+      server: "{{ ansible_host | default(inventory_hostname) }}"
+      user: "{{ ansible_user }}"
+      password: "{{ ansible_password }}"
+      validate_certs: "{{ f5_validate_certs | default(false) }}"
+    f5_precheck_commands: "{{ f5_backup_commands | default(['show sys version', 'list /net vlan one-line', 'list /ltm pool one-line', 'list /ltm virtual one-line']) }}"
+    f5_merge_content_resolved: "{{ f5_merge_content | default('') }}"
+    f5_tmsh_commands_resolved: "{{ f5_tmsh_commands | default([]) }}"
+  tasks:
+    - name: Ensure the requested vendor family is supported
+      ansible.builtin.assert:
+        that:
+          - normalized_vendor in ['cisco_ios', 'cisco_nxos', 'huawei_ce', 'h3c_cli', 'f5_bigip']
+        fail_msg: >-
+          Unsupported vendor_family={{ vendor_family | default(network_vendor | default('unset')) }}.
+
+    - name: Ensure local backup directory exists when backup is enabled
+      ansible.builtin.file:
+        path: "{{ network_backup_dir_resolved }}"
+        state: directory
+        mode: "0755"
+      delegate_to: localhost
+      when: network_backup_before_change_resolved
+
+    - name: Ensure CLI vendors have config lines to push
+      ansible.builtin.assert:
+        that:
+          - selected_config_lines | length > 0
+        fail_msg: >-
+          Please provide network_config_lines or {{ normalized_vendor }}_config_lines.
+      when: normalized_vendor != 'f5_bigip'
+
+    - name: Ensure F5 has deployable content
+      ansible.builtin.assert:
+        that:
+          - (f5_tmsh_commands_resolved | length > 0) or (f5_merge_content_resolved | trim | length > 0)
+        fail_msg: >-
+          Please provide f5_tmsh_commands or f5_merge_content for F5 BIG-IP.
+      when: normalized_vendor == 'f5_bigip'
+
+    - name: Push Cisco IOS config lines
+      cisco.ios.ios_config:
+        lines: "{{ selected_config_lines }}"
+        backup: "{{ network_backup_before_change_resolved }}"
+        backup_options:
+          dir_path: "{{ network_backup_dir_resolved }}"
+          filename: "{{ inventory_hostname }}-before-change.cfg"
+        save_when: "{{ 'modified' if network_save_when_done_resolved else 'never' }}"
+      register: deploy_result
+      when: normalized_vendor == 'cisco_ios'
+
+    - name: Push Cisco NX-OS config lines
+      cisco.nxos.nxos_config:
+        lines: "{{ selected_config_lines }}"
+        backup: "{{ network_backup_before_change_resolved }}"
+        backup_options:
+          dir_path: "{{ network_backup_dir_resolved }}"
+          filename: "{{ inventory_hostname }}-before-change.cfg"
+        save_when: "{{ 'modified' if network_save_when_done_resolved else 'never' }}"
+      register: deploy_result
+      when: normalized_vendor == 'cisco_nxos'
+
+    - name: Push Huawei config lines
+      community.network.ce_config:
+        lines: "{{ selected_config_lines }}"
+        backup: "{{ network_backup_before_change_resolved }}"
+        backup_options:
+          dir_path: "{{ network_backup_dir_resolved }}"
+          filename: "{{ inventory_hostname }}-before-change.cfg"
+        save: "{{ network_save_when_done_resolved }}"
+      register: deploy_result
+      when: normalized_vendor == 'huawei_ce'
+
+    - name: Push H3C config lines through generic CLI
+      ansible.netcommon.cli_config:
+        config: "{{ selected_config_lines | join('\n') }}"
+        backup: "{{ network_backup_before_change_resolved }}"
+        backup_options:
+          dir_path: "{{ network_backup_dir_resolved }}"
+          filename: "{{ inventory_hostname }}-before-change.cfg"
+      register: deploy_result
+      when: normalized_vendor == 'h3c_cli'
+
+    - name: Save H3C running configuration
+      ansible.netcommon.cli_command:
+        command: save force
+      register: h3c_save_result
+      when:
+        - normalized_vendor == 'h3c_cli'
+        - network_save_when_done_resolved
+
+    - name: Capture F5 pre-check snapshot
+      f5networks.f5_modules.bigip_command:
+        commands: "{{ f5_precheck_commands }}"
+        provider: "{{ f5_provider }}"
+        warn: false
+      delegate_to: localhost
+      register: f5_precheck_result
+      when:
+        - normalized_vendor == 'f5_bigip'
+        - network_backup_before_change_resolved
+
+    - name: Save F5 pre-check snapshot
+      ansible.builtin.copy:
+        content: |-
+          {% for idx in range(f5_precheck_commands | length) %}
+          ### {{ f5_precheck_commands[idx] }}
+          {{ f5_precheck_result.stdout[idx] | default('') }}
+
+          {% endfor %}
+        dest: "{{ network_backup_dir_resolved }}/{{ inventory_hostname }}-before-change.cfg"
+        mode: "0644"
+      delegate_to: localhost
+      when:
+        - normalized_vendor == 'f5_bigip'
+        - network_backup_before_change_resolved
+
+    - name: Push F5 TMSH commands
+      f5networks.f5_modules.bigip_command:
+        commands: "{{ f5_tmsh_commands_resolved }}"
+        provider: "{{ f5_provider }}"
+        warn: false
+      delegate_to: localhost
+      register: f5_command_result
+      when:
+        - normalized_vendor == 'f5_bigip'
+        - f5_tmsh_commands_resolved | length > 0
+
+    - name: Merge F5 SCF content
+      f5networks.f5_modules.bigip_config:
+        merge_content: "{{ f5_merge_content_resolved }}"
+        provider: "{{ f5_provider }}"
+        save: false
+      delegate_to: localhost
+      register: f5_merge_result
+      when:
+        - normalized_vendor == 'f5_bigip'
+        - f5_merge_content_resolved | trim | length > 0
+
+    - name: Save F5 running configuration
+      f5networks.f5_modules.bigip_config:
+        save: true
+        provider: "{{ f5_provider }}"
+      delegate_to: localhost
+      register: f5_save_result
+      when:
+        - normalized_vendor == 'f5_bigip'
+        - network_save_when_done_resolved
+
+    - name: Print deployment result
+      ansible.builtin.debug:
+        msg:
+          vendor_family: "{{ normalized_vendor }}"
+          inventory_host: "{{ inventory_hostname }}"
+          changed: >-
+            {{
+              deploy_result.changed
+              if normalized_vendor != 'f5_bigip'
+              else (
+                (f5_command_result.changed | default(false))
+                or (f5_merge_result.changed | default(false))
+                or (f5_save_result.changed | default(false))
+              )
+            }}
+          backup_dir: "{{ network_backup_dir_resolved if network_backup_before_change_resolved else 'disabled' }}"
+          pushed_lines: "{{ selected_config_lines if normalized_vendor != 'f5_bigip' else f5_tmsh_commands_resolved }}"

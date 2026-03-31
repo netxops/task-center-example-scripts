@@ -60,6 +60,81 @@
       "name": "task-center-ansible-service-status-defaults",
       "description": "Ansible 服务状态巡检默认变量组。",
       "vars_json": "{\n  \"service_name\": \"sshd\"\n}"
+    },
+    {
+      "name": "task-center-ansible-network-baseline-defaults",
+      "description": "多厂商网络基线巡检默认变量组。",
+      "vars_json": "{\n  \"f5_gather_subset\": [\"system-info\", \"interfaces\", \"vlans\", \"device-groups\", \"sync-status\", \"ltm-pools\", \"virtual-servers\"]\n}"
+    },
+    {
+      "name": "task-center-ansible-network-interface-audit-defaults",
+      "description": "多厂商网络接口与邻居巡检默认变量组。",
+      "vars_json": "{\n  \"f5_interface_subset\": [\"interfaces\", \"vlans\", \"self-ips\", \"trunks\", \"virtual-servers\"]\n}"
+    },
+    {
+      "name": "task-center-ansible-network-config-backup-defaults",
+      "description": "多厂商网络配置备份默认变量组。",
+      "vars_json": "{\n  \"network_backup_dir\": \"./artifacts/network-backups\",\n  \"network_backup_tag\": \"oneops\"\n}"
+    },
+    {
+      "name": "task-center-ansible-network-batch-command-defaults",
+      "description": "多厂商网络批量命令默认变量组。",
+      "vars_json": "{\n  \"cisco_ios_commands\": [\"show version\", \"show ip interface brief\"],\n  \"cisco_nxos_commands\": [\"show version\", \"show interface brief\"],\n  \"huawei_ce_commands\": [\"display version\", \"display ip interface brief\"],\n  \"h3c_cli_commands\": [\"display version\", \"display ip interface brief\"],\n  \"f5_tmsh_commands\": [\"show sys version\", \"show net interface\"]\n}"
+    },
+    {
+      "name": "task-center-ansible-network-snippet-deploy-defaults",
+      "description": "多厂商网络配置片段下发默认变量组。",
+      "vars_json": "{\n  \"network_backup_before_change\": true,\n  \"network_save_when_done\": true\n}"
+    },
+    {
+      "name": "task-center-ansible-switch-baseline-defaults",
+      "description": "交换机主线基线盘点默认变量组。",
+      "vars_json": "{\n  \"cisco_ios_baseline_commands\": [\"show version\", \"show inventory\", \"show ip interface brief\", \"show lldp neighbors detail\"],\n  \"cisco_nxos_baseline_commands\": [\"show version\", \"show inventory\", \"show interface brief\", \"show lldp neighbors detail\"],\n  \"huawei_ce_baseline_commands\": [\"display version\", \"display device\", \"display ip interface brief\", \"display lldp neighbor verbose\"],\n  \"h3c_cli_baseline_commands\": [\"display version\", \"display device manuinfo\", \"display ip interface brief\", \"display lldp neighbor-information verbose\"]\n}"
+    },
+    {
+      "name": "task-center-ansible-switch-interface-audit-defaults",
+      "description": "交换机主线接口与邻居巡检默认变量组。",
+      "vars_json": "{\n  \"cisco_ios_commands\": [\"show interfaces status\", \"show ip interface brief\", \"show lldp neighbors detail\"],\n  \"cisco_nxos_commands\": [\"show interface brief\", \"show interface status\", \"show lldp neighbors detail\"],\n  \"huawei_ce_commands\": [\"display interface brief\", \"display ip interface brief\", \"display lldp neighbor brief\"],\n  \"h3c_cli_commands\": [\"display interface brief\", \"display ip interface brief\", \"display lldp neighbor-information list\"]\n}"
+    },
+    {
+      "name": "task-center-ansible-switch-config-backup-defaults",
+      "description": "交换机主线配置备份默认变量组。",
+      "vars_json": "{\n  \"network_backup_dir\": \"./artifacts/switch-backups\",\n  \"network_backup_tag\": \"switch-nightly\"\n}"
+    },
+    {
+      "name": "task-center-ansible-switch-batch-command-defaults",
+      "description": "交换机主线批量命令默认变量组。",
+      "vars_json": "{\n  \"cisco_ios_commands\": [\"show version\", \"show mac address-table dynamic\"],\n  \"cisco_nxos_commands\": [\"show version\", \"show interface brief\"],\n  \"huawei_ce_commands\": [\"display version\", \"display mac-address dynamic\"],\n  \"h3c_cli_commands\": [\"display version\", \"display mac-address dynamic\"]\n}"
+    },
+    {
+      "name": "task-center-ansible-switch-snippet-deploy-defaults",
+      "description": "交换机主线配置片段下发默认变量组。",
+      "vars_json": "{\n  \"network_backup_before_change\": true,\n  \"network_save_when_done\": true,\n  \"cisco_ios_config_lines\": [\"snmp-server contact OneOps\", \"snmp-server location DefaultArea\"],\n  \"cisco_nxos_config_lines\": [\"snmp-server contact OneOps\", \"snmp-server location DefaultArea\"],\n  \"huawei_ce_config_lines\": [\"snmp-agent sys-info contact OneOps\", \"snmp-agent sys-info location DefaultArea\"],\n  \"h3c_cli_config_lines\": [\"snmp-agent sys-info contact OneOps\", \"snmp-agent sys-info location DefaultArea\"]\n}"
+    },
+    {
+      "name": "task-center-ansible-f5-device-baseline-defaults",
+      "description": "F5 主线设备基线默认变量组。",
+      "vars_json": "{\n  \"f5_gather_subset\": [\"system-info\", \"interfaces\", \"vlans\", \"device-groups\", \"sync-status\", \"ltm-pools\", \"virtual-servers\"]\n}"
+    },
+    {
+      "name": "task-center-ansible-f5-ltm-audit-defaults",
+      "description": "F5 主线 LTM 服务巡检默认变量组。",
+      "vars_json": "{\n  \"f5_interface_subset\": [\"interfaces\", \"vlans\", \"self-ips\", \"trunks\", \"nodes\", \"ltm-pools\", \"virtual-servers\", \"sync-status\"]\n}"
+    },
+    {
+      "name": "task-center-ansible-f5-config-backup-defaults",
+      "description": "F5 主线配置快照默认变量组。",
+      "vars_json": "{\n  \"network_backup_dir\": \"./artifacts/f5-backups\",\n  \"network_backup_tag\": \"f5-nightly\",\n  \"f5_backup_commands\": [\"show sys version\", \"list /net self one-line\", \"list /net vlan one-line\", \"list /ltm pool one-line\", \"list /ltm virtual one-line\"]\n}"
+    },
+    {
+      "name": "task-center-ansible-f5-batch-command-defaults",
+      "description": "F5 主线批量 TMSH 命令默认变量组。",
+      "vars_json": "{\n  \"f5_tmsh_commands\": [\"show sys version\", \"list /ltm pool one-line\", \"list /ltm virtual one-line\"]\n}"
+    },
+    {
+      "name": "task-center-ansible-f5-snippet-deploy-defaults",
+      "description": "F5 主线配置片段变更默认变量组。",
+      "vars_json": "{\n  \"network_backup_before_change\": true,\n  \"network_save_when_done\": true,\n  \"f5_tmsh_commands\": [\"modify sys global-settings hostname f5-change-me\"]\n}"
     }
   ]
 }
